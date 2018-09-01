@@ -49,6 +49,7 @@ services:
       - ./stream-enrich-config:/snowplow/config
     environment:
       - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
+
   web:
     image: nginx
     volumes:
@@ -56,6 +57,9 @@ services:
     ports:
       - "80:80"
 
+  events-processor:
+    build:
+      context: ./events-processor
 
 volumes:
   zk-data: {}

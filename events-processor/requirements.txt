@@ -1,0 +1,2 @@
+confluent_kafka
+snowplow_analytics_sdk
