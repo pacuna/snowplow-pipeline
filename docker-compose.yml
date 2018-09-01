@@ -1,0 +1,64 @@
+version: "3"
+
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zk-data:/var/lib/zookeeper/data
+      - zk-logs:/var/lib/zookeeper/log
+      - secrets:/etc/zookeeper/secrets
+
+  kafka:
+    image: confluentinc/cp-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+      - secrets:/etc/kafka/secrets
+
+  scala-stream-collector:
+    image: snowplow-docker-registry.bintray.io/snowplow/scala-stream-collector-kafka:0.14.0
+    command: [ "--config", "/snowplow/config/config.hocon" ]
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./scala-stream-collector-config:/snowplow/config
+    environment:
+      - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  stream-enrich:
+    image: snowplow-docker-registry.bintray.io/snowplow/stream-enrich-kafka:0.19.0
+    command: [
+      "--config", "/snowplow/config/config.hocon",
+      "--resolver", "file:/snowplow/config/resolver.json"
+    ]
+    depends_on:
+      - scala-stream-collector
+    volumes:
+      - ./stream-enrich-config:/snowplow/config
+    environment:
+      - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
+  web:
+    image: nginx
+    volumes:
+      - ./web:/usr/share/nginx/html
+    ports:
+      - "80:80"
+
+
+volumes:
+  zk-data: {}
+  zk-logs: {}
+  kafka-data: {}
+  secrets: {}

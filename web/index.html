@@ -1,0 +1,36 @@
+<html>
+<head>
+    <title>Snowplow test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+    <!-- Snowplow starts plowing -->
+    <script type="text/javascript">
+
+        ;(function(p,l,o,w,i,n,g){if(!p[i]){p.GlobalSnowplowNamespace=p.GlobalSnowplowNamespace||[];
+        p.GlobalSnowplowNamespace.push(i);p[i]=function(){(p[i].q=p[i].q||[]).push(arguments)
+        };p[i].q=p[i].q||[];n=l.createElement(o);g=l.getElementsByTagName(o)[0];n.async=1;
+        n.src=w;g.parentNode.insertBefore(n,g)}}(window,document,"script","//d1fc8wv8zag5ca.cloudfront.net/2.9.2/sp.js","snowplow"));
+
+        window.snowplow('newTracker', 'cf', 'localhost:8080', {
+          appId: 'testApp',
+          platform: 'web',
+        });
+
+        window.snowplow('enableActivityTracking', 10, 10);
+        window.snowplow('enableLinkClickTracking');
+        window.snowplow('trackPageView');
+
+    </script>
+</head>
+
+<body>
+    <h1>Some links</h1>
+
+
+    <a href=http://google.com target="_blank" id="googleLink">Google</a>
+    <br>
+    <a href=http://wikipedia.com target="_blank" id="wikipediaLink">Wikipedia</a>
+
+</body>
+
+</html>
