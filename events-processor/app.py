@@ -1,4 +1,4 @@
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Producer, Consumer, KafkaError
 import snowplow_analytics_sdk.event_transformer
 import snowplow_analytics_sdk.snowplow_event_transformation_exception
 import json
@@ -9,6 +9,10 @@ kafka_consumer = Consumer({
     'default.topic.config': {
         'auto.offset.reset': 'smallest'
     }
+ })
+
+kafka_producer = Producer({
+    'bootstrap.servers': "kafka:9092",
  })
 
 kafka_consumer.subscribe(['snowplow_enriched_good'])
@@ -28,6 +32,9 @@ while True:
 
     try:
         json_data = snowplow_analytics_sdk.event_transformer.transform(event)
+        kafka_producer.poll(0)
+        kafka_producer.produce('snowplow_json_event', json.dumps(json_data).encode('utf-8'))
+        kafka_producer.flush()
         print(json_data)
 
     except snowplow_analytics_sdk.snowplow_event_transformation_exception.SnowplowEventTransformationException as e:
