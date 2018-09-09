@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: events-processor-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: events-processor
+  template:
+    metadata:
+      labels:
+        app: events-processor
+    spec:
+      containers:
+        - image: gcr.io/snowplow-215823/events-processor
+          imagePullPolicy: IfNotPresent
+          name: events-processor
+          resources:
+            limits:
+              memory: 256Mi
+

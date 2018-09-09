@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collector
+  template:
+    metadata:
+      labels:
+        app: collector
+    spec:
+      containers:
+        - image: snowplow-docker-registry.bintray.io/snowplow/scala-stream-collector-kafka:0.14.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SP_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+          name: collector
+          args: ["--config", "/snowplow/customconfig/production.conf"]
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+          - name: collector-config
+            mountPath: /snowplow/customconfig
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "1Gi"
+      volumes:
+        - name: collector-config
+          configMap:
+            name: collector-config

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enricher-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enricher
+  template:
+    metadata:
+      labels:
+        app: enricher
+    spec:
+      containers:
+        - image: snowplow-docker-registry.bintray.io/snowplow/stream-enrich-kafka:0.19.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SP_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+          name: enricher
+          args:
+            - --config
+            - /snowplow/customconfig/enricher/production.conf
+            - --resolver
+            - file:/snowplow/customconfig/resolver/resolver.json
+          volumeMounts:
+          - name: conf
+            mountPath: /snowplow/customconfig/enricher
+          - name: resolver
+            mountPath: /snowplow/customconfig/resolver
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "1Gi"
+      volumes:
+        - name: conf
+          configMap:
+            name: enricher-config
+        - name: resolver
+          configMap:
+            name: enricher-resolver
