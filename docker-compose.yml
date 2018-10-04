@@ -50,6 +50,26 @@ services:
     environment:
       - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
 
+  postgres:
+    container_name: postgres
+    image: postgres:10
+    volumes:
+      - ./iglu-server-config/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  iglu-server:
+    container_name: iglu-server
+    image: snowplow-docker-registry.bintray.io/snowplow/iglu-server:0.4.0
+    entrypoint: /usr/local/bin/wait-for-postgres.sh postgres --config /snowplow/config/application.conf
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./iglu-server-config/wait-for-postgres.sh:/usr/local/bin/wait-for-postgres.sh
+      - ./iglu-server-config/application.conf:/snowplow/config/application.conf
+    environment:
+      - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
+
   web:
     image: nginx
     volumes:
