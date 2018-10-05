@@ -20,6 +20,25 @@
         window.snowplow('enableLinkClickTracking');
         window.snowplow('trackPageView');
 
+	/* Example function to use with a custom schema registered in the iglu server
+	function clickLink() {
+		console.log("Custom event");
+		window.snowplow('trackUnstructEvent', {
+			schema: 'iglu:com./mycompany/jsonschema/1-0-0',
+			data: {
+				event: 'click',
+				event_properties: {
+					elem: 'button',
+					id: 4532
+				},
+				user_properties: {
+					email: 'mail@mail.com',
+					name: 'John'
+				}
+			}
+		});
+	}*/
+
     </script>
 </head>
 
