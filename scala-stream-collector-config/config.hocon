@@ -157,7 +157,7 @@ collector {
       #}
 
       # Or Kafka
-      brokers = "kafka:9092"
+      brokers = "kafka:29092"
       ## Number of retries to perform before giving up on sending a record
       retries = 0
 

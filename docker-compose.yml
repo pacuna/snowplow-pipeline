@@ -3,30 +3,61 @@ version: "3"
 services:
 
   zookeeper:
-    image: confluentinc/cp-zookeeper
+    image: confluentinc/cp-zookeeper:7.2.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - zk-data:/var/lib/zookeeper/data
-      - zk-logs:/var/lib/zookeeper/log
-      - secrets:/etc/zookeeper/secrets
 
   kafka:
-    image: confluentinc/cp-kafka
+    image: confluentinc/cp-server:7.2.1
+    hostname: kafka
+    container_name: kafka
     depends_on:
       - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-      - secrets:/etc/kafka/secrets
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka:29092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.2.1
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - kafka
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
 
   scala-stream-collector:
-    image: snowplow-docker-registry.bintray.io/snowplow/scala-stream-collector-kafka:0.14.0
+    image: snowplow/scala-stream-collector-kafka
     command: [ "--config", "/snowplow/config/config.hocon" ]
     depends_on:
       - kafka
@@ -38,7 +69,7 @@ services:
       - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
 
   stream-enrich:
-    image: snowplow-docker-registry.bintray.io/snowplow/stream-enrich-kafka:0.19.0
+    image: snowplow/stream-enrich-kafka
     command: [
       "--config", "/snowplow/config/config.hocon",
       "--resolver", "file:/snowplow/config/resolver.json"
@@ -52,21 +83,25 @@ services:
 
   iglu-postgres:
     container_name: iglu-postgres
-    image: postgres:10
-    volumes:
-      - ./iglu-server-config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sp_user
+      POSTGRES_PASSWORD: sp_password
+      POSTGRES_DB: igludb
+
 
   iglu-server:
     container_name: iglu-server
-    image: snowplow-docker-registry.bintray.io/snowplow/iglu-server:0.4.0
-    entrypoint: /usr/local/bin/wait-for-postgres.sh iglu-postgres --config /snowplow/config/application.conf
+    image: snowplow/iglu-server
+    command: [ "--config", "/snowplow/config/config.hocon" ]
     depends_on:
       - iglu-postgres
     ports:
       - "8081:8081"
     volumes:
-      - ./iglu-server-config/wait-for-postgres.sh:/usr/local/bin/wait-for-postgres.sh
-      - ./iglu-server-config/application.conf:/snowplow/config/application.conf
+      - ./iglu-server-config/config.hocon:/snowplow/config/config.hocon
     environment:
       - "SP_JAVA_OPTS=-Xms512m -Xmx512m"
 
