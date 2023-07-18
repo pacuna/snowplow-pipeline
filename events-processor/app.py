@@ -4,7 +4,7 @@ import snowplow_analytics_sdk.snowplow_event_transformation_exception
 import json
 
 kafka_consumer = Consumer({
-    'bootstrap.servers': "kafka:9092",
+    'bootstrap.servers': "kafka:29092",
     'group.id': 'python-consumer',
     'default.topic.config': {
         'auto.offset.reset': 'smallest'
@@ -12,7 +12,7 @@ kafka_consumer = Consumer({
  })
 
 kafka_producer = Producer({
-    'bootstrap.servers': "kafka:9092",
+    'bootstrap.servers': "kafka:29092",
  })
 
 kafka_consumer.subscribe(['snowplow_enriched_good'])
@@ -41,4 +41,3 @@ while True:
         for error_message in e.error_messages:
             print("error: " + error_message)
 
-c.close()
