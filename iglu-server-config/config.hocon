@@ -1,0 +1,14 @@
+{
+  "repoServer": {
+    "interface": "0.0.0.0"
+    "port": 8081
+  }
+
+  "database": {
+    # "type": "dummy"
+    "host": "iglu-postgres"
+    "dbname": "igludb"
+    "username": "sp_user"
+    "password": "sp_password"
+  }
+}
